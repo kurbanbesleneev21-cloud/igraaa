@@ -84,15 +84,32 @@ const cityBlocks = [
   [48,67,184,146],[264,65,181,152],[474,66,199,154],
   [48,274,180,166],[263,279,179,174],[479,280,194,170]
 ];
+function cafeRoom(index) {
+  const isOwnCafe = state.property===index && state.company?.type==="Кофейня";
+  const isPreview = index===0 && !(state.property===0 && state.company?.type!=="Кофейня")
+    && !(state.company?.type==="Кофейня" && state.property!==null);
+  if (!isOwnCafe && !isPreview) return "";
+  const working = isOwnCafe && state.staff>0;
+  return '<span class="cafe-room'+(working || isPreview?' staffed':'')+'" aria-hidden="true">'
+    +'<span class="cafe-counter"><i></i><i></i></span><span class="cafe-table first"></span><span class="cafe-table second"></span>'
+    +'<i class="person barista"></i><i class="person waiter"></i><i class="person guest"></i></span>';
+}
+function streetLife() {
+  return '<div class="street-life" aria-hidden="true">'
+    +'<div class="crosswalk"></div><i class="person walker one"></i><i class="person walker two"></i>'
+    +'<i class="person walker three"></i><i class="person walker four"></i></div>';
+}
 function map() {
   const lot = cityLots[selected];
   const [name,rent,demand] = properties[selected];
   const occupied = state.property===selected;
+  const cafe = occupied && state.company?.type==="Кофейня";
+  const detail = cafe ? (state.staff ? '<p>Бариста готовит кофе за стойкой, официант обслуживает столики.</p>' : '<p>Вы за стойкой. Наймите сотрудника, чтобы открыть обслуживание столиков.</p>'+action("openTeam","Перейти к команде")) : "";
   const terrain = cityBlocks.map(([x,y,w,h],index) => '<div aria-hidden="true" class="city-block block-'+index+'" style="left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px"><i></i><i></i><i></i></div>').join("");
-  const buildings = cityLots.map(([x,y,title],index)=>'<button type="button" class="lot'+(state.property===index?' leased':'')+'" data-action="selectLot" value="'+index+'" aria-pressed="'+(selected===index)+'" style="left:'+x+'px;top:'+y+'px"><span aria-hidden="true" class="roof"></span><span>'+properties[index][0]+'</span><span class="sr-only">: '+title+'</span></button>').join("");
-  return '<div class="map-toolbar"><p>Перемещайте карту пальцем или мышью. Выберите здание для аренды.</p><div class="row">'+action("zoomOut","− Приближение")+action("zoomIn","+ Приближение")+action("centerLot","К выбранному зданию")+'</div></div>'
-    +'<div class="city-viewport" id="city-scroll" tabindex="0" aria-label="Прокручиваемая карта Москвы"><div class="city-size" style="width:'+720*zoom+'px;height:'+500*zoom+'px"><div class="city" style="transform:scale('+zoom+')">'+terrain+'<div class="city-road horizontal" aria-hidden="true">САДОВОЕ КОЛЬЦО</div><div class="city-road road-west" aria-hidden="true"></div><div class="city-road road-east" aria-hidden="true"></div>'+buildings+'</div></div></div>'
-    +'<div class="lot-details" id="lot-details">'+block(lot[2],'<p>'+name+' · '+money(rent)+' в день · спрос '+Math.round(demand*100)+'%</p>'+(!state.company?action("openCompany","Открыть компанию"):occupied?action("cancelLease","Отказаться от аренды"):action("lease",state.property===null?"Арендовать помещение":"Перенести компанию сюда",selected)))+'</div>';
+  const buildings = cityLots.map(([x,y,title],index)=>'<button type="button" class="lot'+(state.property===index?' leased':'')+'" data-action="selectLot" value="'+index+'" aria-pressed="'+(selected===index)+'" style="left:'+x+'px;top:'+y+'px">'+(cafeRoom(index)||'<span aria-hidden="true" class="roof"></span>')+'<span>'+properties[index][0]+'</span><span class="sr-only">: '+title+'</span></button>').join("");
+  return '<div class="map-toolbar"><p>Проведите пальцем или потяните мышью, чтобы осмотреть город. Нажмите на здание, чтобы узнать условия аренды. Кофейня показана без крыши.</p><div class="row">'+action("zoomOut","− Отдалить")+action("zoomIn","+ Приблизить")+action("centerLot","К выбранному зданию")+'</div></div>'
+    +'<div class="city-viewport" id="city-scroll" tabindex="0" aria-label="Прокручиваемая карта Москвы"><div class="city-size" style="width:'+720*zoom+'px;height:'+500*zoom+'px"><div class="city" style="transform:scale('+zoom+')">'+terrain+'<div class="city-road horizontal" aria-hidden="true">САДОВОЕ КОЛЬЦО</div><div class="city-road road-west" aria-hidden="true"></div><div class="city-road road-east" aria-hidden="true"></div>'+streetLife()+buildings+'</div></div></div>'
+    +'<div class="lot-details" id="lot-details">'+block(lot[2],'<p>'+name+' · '+money(rent)+' в день · спрос '+Math.round(demand*100)+'%</p>'+detail+(!state.company?action("openCompany","Открыть компанию"):occupied?action("cancelLease","Отказаться от аренды"):action("lease",state.property===null?"Арендовать помещение":"Перенести компанию сюда",selected)))+'</div>';
 }
 function positionMap() {
   const viewport = byId("city-scroll");
@@ -181,6 +198,9 @@ byId("view").addEventListener("click",event=>{
     case "zoomOut":
     case "centerLot":
       return mapAction(button);
+    case "openTeam":
+      tab=4;
+      return render();
     case "openCompany":
       tab=1;
       render();
