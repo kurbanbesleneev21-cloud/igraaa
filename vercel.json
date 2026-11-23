@@ -1,1 +1,1 @@
-{"framework":null,"installCommand":"","buildCommand":"","outputDirectory":"."}
+{"framework":null,"installCommand":"npm install","buildCommand":"mkdir -p dist && cp index.html style.css game.js exchange.js dist/","outputDirectory":"dist"}

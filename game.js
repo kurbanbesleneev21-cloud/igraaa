@@ -72,22 +72,24 @@ function overview() {
     +'<div class="stack">'+block("Динамика прибыли", history.length ? '<div class="chart" aria-hidden="true">'+history.map(x=>'<span class="'+(x.profit<0?"negative":"")+'" style="height:'+Math.max(2,Math.round(100*Math.abs(x.profit)/peak))+'%"></span>').join("")+'</div><small>Последние '+history.length+' игровых дней</small>':'<p>Проведите первый игровой день, чтобы увидеть результаты.</p>')+block("Журнал операций",activity())+'</div>';
 }
 function company() {
-  if (!state.company) return block("Открыть компанию",'<form id="register" class="stack"><label>Название<input name="title" maxlength="48" required autocomplete="off"></label><label>Направление<select name="type">'+Object.keys(industries).map(v=>'<option>'+v+'</option>').join("")+'</select></label><div><button>Зарегистрировать за '+money(5000)+'</button></div></form>');
+  if (!state.company) return block("Открыть компанию",'<form id="register" class="stack"><label>Название<input name="title" maxlength="48" required autocomplete="off"></label><label>Тип здания<select name="type">'+Object.keys(industries).map(v=>'<option value="'+v+'">'+v+' · '+money(buildPrice(v))+'</option>').join("")+'</select></label><div><button>Построить на выбранном участке</button></div></form>');
   return block(escape(state.company.title),'<p>'+escape(state.company.type)+' · '+(state.property===null?"Требуется помещение":escape(properties[state.property][0]))+'</p><form id="pricing" class="stack"><label>Цена за единицу, ₽<input name="price" type="number" min="1" max="100000" required value="'+state.company.price+'"></label><div><button>Сохранить цену</button></div></form>');
 }
-const cityWidth = 940;
-const cityHeight = 640;
+const cityWidth = 1510;
+const cityHeight = 880;
 const cityLots = [[398,94],[85,116],[745,108],[735,447],[76,449],[410,445]];
 const cityBlocks = [
   [44,65,235,209],[351,57,248,219],[675,62,225,212],
   [44,368,235,213],[351,369,248,213],[675,369,225,218]
 ];
+properties.push(["Таганка",1200,1.15],["Якиманка",1400,1.25],["Лефортово",750,.95],["Басманный",1250,1.2],["Измайлово",800,1],["Даниловский",950,1.05]);
+cityLots.push([1000,95],[1250,100],[1005,450],[1250,440],[190,690],[680,685]);
+for (const [x,y] of cityLots.slice(6)) cityBlocks.push([x-25,y-22,248,195]);
+const buildPrice = type => type==="Магазин"?1800:type==="Пекарня"?1500:1200;
 function cafeRoom(index) {
   const ownCafe = state.property===index && state.company?.type==="Кофейня";
-  const preview = index===0 && state.property!==0
-    && !(state.company?.type==="Кофейня" && state.property!==null);
-  if (!ownCafe && !preview) return "";
-  const staffed = preview || state.staff>0;
+  if (!ownCafe) return "";
+  const staffed = state.staff>0;
   return '<span class="cafe-room'+(staffed?' staffed':'')+'" aria-hidden="true">'
     +'<span class="cafe-window"></span><span class="cafe-bench"></span><span class="cafe-entry"></span>'
     +'<span class="cafe-counter"><i class="espresso-machine"></i><i class="grinder"></i><i class="cups"></i><i class="register"></i></span>'
@@ -102,22 +104,22 @@ function streetLife() {
 function map() {
   const [name,rent,demand] = properties[selected];
   const occupied = state.property===selected;
-  const propertyTitle = occupied ? escape(state.company.title) : "Свободное помещение";
+  const propertyTitle = occupied ? escape(state.company.title) : "Свободный участок";
   const cafe = occupied && state.company?.type==="Кофейня";
   const detail = cafe ? (state.staff ? '<p>Бариста готовит кофе за стойкой, официант обслуживает столики.</p>' : '<p>Вы за стойкой. Наймите сотрудника, чтобы открыть обслуживание столиков.</p>'+action("openTeam","Перейти к команде")) : "";
   const terrain = cityBlocks.map(([x,y,w,h],index) => '<div aria-hidden="true" class="city-block block-'+index+'" style="left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px"><i></i><i></i><i></i></div>').join("");
   const buildings = cityLots.map(([x,y],index)=>{
     const leased = state.property===index;
-    const title = leased ? escape(state.company.title) : "Свободное помещение";
-    const interior = cafeRoom(index);
+    const title = leased ? escape(state.company.title) : "Свободный участок";
+    const interior = cafeRoom(index) || (leased ? '<span class="shop-floor"><i></i><i></i><i></i></span>' : "");
     const sign = leased ? '<span class="lot-sign">'+title+'</span>' : "";
     return '<button type="button" class="lot'+(leased?' leased':'')+'" data-action="selectLot" value="'+index
       +'" aria-label="'+title+', '+properties[index][0]+'" aria-pressed="'+(selected===index)
-      +'" style="left:'+x+'px;top:'+y+'px">'+(interior||'<span aria-hidden="true" class="roof"></span>')+sign+'</button>';
+      +'" style="left:'+x+'px;top:'+y+'px">'+(interior||'<span aria-hidden="true" class="plot"></span>')+sign+'</button>';
   }).join("");
-  return '<div class="map-toolbar"><p>Проведите пальцем или потяните мышью, чтобы осмотреть город. Нажмите на здание, чтобы узнать условия аренды. Кофейня показана без крыши.</p><div class="row">'+action("zoomOut","− Отдалить")+action("zoomIn","+ Приблизить")+action("centerLot","К выбранному зданию")+'</div></div>'
+  return '<div class="map-toolbar"><p>Проведите пальцем или потяните мышью, чтобы осмотреть город. Выберите участок, затем тип здания. За строительство платят один раз, за землю — каждый игровой день.</p><div class="row">'+action("zoomOut","− Отдалить")+action("zoomIn","+ Приблизить")+action("centerLot","К выбранному зданию")+'</div></div>'
     +'<div class="city-viewport" id="city-scroll" tabindex="0" aria-label="Прокручиваемая карта Москвы"><div class="city-size" style="width:'+cityWidth*zoom+'px;height:'+cityHeight*zoom+'px"><div class="city" style="transform:scale('+zoom+')">'+terrain+'<div class="city-road horizontal" aria-hidden="true">САДОВОЕ КОЛЬЦО</div><div class="city-road road-west" aria-hidden="true"></div><div class="city-road road-east" aria-hidden="true"></div>'+streetLife()+buildings+'</div></div></div>'
-    +'<div class="lot-details" id="lot-details">'+block(propertyTitle,'<p>'+name+' · '+money(rent)+' в день · спрос '+Math.round(demand*100)+'%</p>'+detail+(!state.company?action("openCompany","Открыть компанию"):occupied?action("cancelLease","Отказаться от аренды"):action("lease",state.property===null?"Арендовать помещение":"Перенести компанию сюда",selected)))+'</div>';
+    +'<div class="lot-details" id="lot-details">'+block(propertyTitle,'<p>'+name+' · '+money(rent)+' в день · спрос '+Math.round(demand*100)+'%</p>'+detail+(!state.company?action("openCompany","Выбрать бизнес и построить"):occupied?action("cancelLease","Отказаться от аренды"):action("lease","Построить здесь · "+money(buildPrice(state.company.type)),selected)))+'</div>';
 }
 function positionMap() {
   const viewport = byId("city-scroll");
@@ -152,10 +154,13 @@ function mapAction(button) {
   const selector = command==="selectLot"?'[data-action="selectLot"][aria-pressed="true"]':'[data-action="'+command+'"]';
   byId("view").querySelector(selector)?.focus({preventScroll:true});
 }
-function market() {
+function supplier() {
   if (!state.company) return block("Поставщики","<p>Сначала зарегистрируйте компанию.</p>");
   const {item,cost} = industries[state.company.type];
   return block("Оптовый поставщик",'<p>Ассортимент · '+item+' · '+money(cost)+' за единицу.</p><p>На складе · '+state.stock+' ед.</p><form id="purchase" class="stack"><label>Количество<input name="quantity" type="number" min="1" max="500" value="10" required></label><div><button>Закупить товар</button></div></form>');
+}
+function market() {
+  return supplier() + (state.company ? block("Биржа игроков",'<div id="exchange"></div>') : "");
 }
 function team() {
   return block("Сотрудники",'<p>В штате · '+state.staff+' человек. Каждый сотрудник добавляет до 9 продаж в день при базовом спросе. Зарплата · '+money(600)+' в день.</p><div class="row">'+action("hire","Нанять")+action("fire","Уволить")+'</div>');
@@ -168,8 +173,9 @@ function render() {
   if (previousMap && tab!==2) camera = {left:previousMap.scrollLeft,top:previousMap.scrollTop};
   byId("clock").textContent = "Москва · День "+state.day;
   byId("nav").innerHTML = tabs.map((label,i)=>'<button data-tab="'+i+'"'+(tab===i?' aria-current="page"':'')+'>'+label+'</button>').join("");
-  byId("view").innerHTML = '<div class="kicker">Экономический симулятор · одиночная игра</div><h1>'+tabs[tab]+'</h1>'+[overview,company,map,market,team,finances][tab]();
+  byId("view").innerHTML = '<div class="kicker">Экономический симулятор</div><h1>'+tabs[tab]+'</h1>'+[overview,company,map,market,team,finances][tab]();
   positionMap();
+  if(tab===3 && state.company) window.showExchange?.();
 }
 byId("advance").addEventListener("click",advance);
 byId("nav").addEventListener("click",event=>{
@@ -186,9 +192,11 @@ byId("view").addEventListener("submit",event=>{
     const title = String(form.get("title")).trim();
     const type = form.get("type");
     if (!title || !Object.hasOwn(industries,type)) return tell("Введите название компании.");
-    if (!charge(5000)) return;
+    if (!charge(buildPrice(type))) return;
+    state.property=selected;
+    tab=2;
     state.company = {title,type,price:industries[type].price};
-    commit("Открыта компания «"+title+"».");
+    commit("Построено здание компании «"+title+"».");
   } else if (event.target.id==="purchase") {
     const quantity = Number(form.get("quantity"));
     if (!Number.isInteger(quantity) || quantity<1 || quantity>500) return;
@@ -224,6 +232,7 @@ byId("view").addEventListener("click",event=>{
       if (!state.company) return tell("Сначала зарегистрируйте компанию.");
       const index = Number(button.value);
       if (state.property===index) return tell("Вы уже арендуете здесь помещение.");
+      if (!charge(buildPrice(state.company.type))) return;
       state.property = index;
       return commit("Подписана ежедневная аренда · "+properties[index][0]+".");
     }
