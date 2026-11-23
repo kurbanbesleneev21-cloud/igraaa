@@ -22,3 +22,29 @@
 @media(prefers-reduced-motion:reduce){.person{animation:none!important}}
 
 .cafe-room{display:block}
+
+/* Neutral fixtures, clear entrances and a wider separation between city blocks. */
+.city{width:940px;height:640px;background-color:#6b7860;background-image:radial-gradient(#879079 1px,transparent 1px);background-size:8px 8px}
+.city-block{background:#858777;border-color:#bdb5a1}.block-2,.block-4{background:#647d5a}.city-block i:nth-child(1){bottom:16px}.city-block i:nth-child(2){right:13px}
+.horizontal{top:305px;width:940px;height:42px}.road-west,.road-east{height:640px;width:32px}.road-west{left:297px}.road-east{left:623px}
+.crosswalk{left:578px;top:307px;height:38px}.walker.one{top:290px}.walker.two{top:350px}.walker.three{top:291px;left:587px}.walker.four{top:40px;left:611px}
+@keyframes walk-across{to{transform:translateX(875px)}}@keyframes cross-road{30%,85%,100%{transform:translateY(63px)}}@keyframes walk-north{to{transform:translateY(550px)}}
+.lot{display:block;width:124px;min-height:76px;padding:5px;border:1px solid #9c9586;border-radius:3px;background:#434745;box-shadow:4px 6px 5px #22292280}
+.lot .roof,.lot.leased .roof{display:block;width:100%;height:61px;border:2px solid #8b9090;border-top-color:#b2b4aa;border-bottom-color:#404648;border-radius:1px;background:repeating-linear-gradient(90deg,#697174 0 18px,#4d575b 18px 20px);position:relative}
+.roof::after{content:"";position:absolute;left:18%;top:23%;width:24px;height:12px;background:#929b96;border:1px solid #5a605d;box-shadow:3px 3px #3d4648}
+.lot:has(.cafe-room){width:188px;padding:5px;background:#363832;border:1px solid #b1a28e}.lot[aria-pressed=true]{outline:2px solid #f2dfaa;outline-offset:3px}
+.lot-sign{display:block;margin-top:4px;padding:5px 4px;background:#272923;color:#f2e4be;border-bottom:1px solid #806d4d;font-weight:650;letter-spacing:.04em;overflow-wrap:anywhere}
+.cafe-room{height:139px;border:5px solid #514337;border-right-color:#6d6256;border-bottom-color:#514337;background:repeating-linear-gradient(90deg,#ae9473 0 13px,#92785a 13px 14px);box-shadow:inset 2px 3px 6px #40362b80}
+.cafe-window{position:absolute;top:-4px;left:19px;right:18px;height:4px;background:repeating-linear-gradient(90deg,#a9bcbb 0 13px,#576365 13px 15px)}
+.cafe-entry{position:absolute;left:67px;bottom:-5px;width:21px;height:7px;background:#9d9e91;border-inline:2px solid #403b33}
+.cafe-bench{position:absolute;top:10px;right:6px;width:12px;height:108px;background:repeating-linear-gradient(#565b46 0 31px,#414634 31px 33px);border-radius:2px}
+.cafe-counter{left:18px;top:20px;width:36px;height:95px;border:1px solid #483d33;border-right:3px solid #6e5341;border-radius:2px;background:linear-gradient(90deg,#493f36,#716354 16%,#5c5247 92%,#3d3a33);box-shadow:3px 4px 3px #473b31a0}
+.cafe-counter .espresso-machine{position:absolute;top:5px;left:4px;width:23px;height:19px;border-radius:2px;background:linear-gradient(#d0d2ce 0 30%,#697270 31% 65%,#a1aaa5 66%);border:1px solid #394341}
+.espresso-machine::after{content:"";position:absolute;top:7px;left:5px;width:4px;height:8px;background:#262e2c;box-shadow:9px 0 #262e2c}
+.cafe-counter .grinder{position:absolute;top:32px;left:7px;width:9px;height:11px;background:#454c45;border:2px solid #92918a}
+.cafe-counter .cups{position:absolute;top:52px;left:6px;width:6px;height:6px;background:#e7e4d8;box-shadow:8px 0 #d9d5c5,0 9px #e7e4d8,8px 9px #d9d5c5}
+.cafe-counter .register{position:absolute;bottom:5px;left:7px;width:15px;height:11px;background:#28302e;border:2px solid #95988e}
+.cafe-table{right:24px;width:28px;height:23px;top:16px;border:1px solid #554b3e;border-radius:2px;background:linear-gradient(90deg,#856d52,#a7906c);box-shadow:-6px 1px #605548,2px 3px #453e32a0}
+.cafe-table.second{top:55px}.cafe-table.third{top:94px}.cafe-table::after{content:"";position:absolute;top:6px;left:7px;width:5px;height:5px;border-radius:50%;background:#e4dfcb}
+.cafe-room .barista{top:40px;left:4px;--shirt:#566357}.cafe-room .waiter{top:97px;left:66px;--shirt:#465857}.cafe-room .guest{top:38px;right:49px;--shirt:#62504c}
+@keyframes serve{0%,100%{transform:translate(0,0)}25%,40%{transform:translate(16px,-70px)}65%,80%{transform:translate(16px,-34px)}}

@@ -75,23 +75,23 @@ function company() {
   if (!state.company) return block("Открыть компанию",'<form id="register" class="stack"><label>Название<input name="title" maxlength="48" required autocomplete="off"></label><label>Направление<select name="type">'+Object.keys(industries).map(v=>'<option>'+v+'</option>').join("")+'</select></label><div><button>Зарегистрировать за '+money(5000)+'</button></div></form>');
   return block(escape(state.company.title),'<p>'+escape(state.company.type)+' · '+(state.property===null?"Требуется помещение":escape(properties[state.property][0]))+'</p><form id="pricing" class="stack"><label>Цена за единицу, ₽<input name="price" type="number" min="1" max="100000" required value="'+state.company.price+'"></label><div><button>Сохранить цену</button></div></form>');
 }
-const cityLots = [
-  [317,92,"Торговый пассаж"],[103,88,"Дом на Арбате"],
-  [530,102,"Магазин у парка"],[552,341,"Производственный корпус"],
-  [104,350,"Угловой магазин"],[303,327,"Торговые ряды"]
-];
+const cityWidth = 940;
+const cityHeight = 640;
+const cityLots = [[398,94],[85,116],[745,108],[735,447],[76,449],[410,445]];
 const cityBlocks = [
-  [48,67,184,146],[264,65,181,152],[474,66,199,154],
-  [48,274,180,166],[263,279,179,174],[479,280,194,170]
+  [44,65,235,209],[351,57,248,219],[675,62,225,212],
+  [44,368,235,213],[351,369,248,213],[675,369,225,218]
 ];
 function cafeRoom(index) {
-  const isOwnCafe = state.property===index && state.company?.type==="Кофейня";
-  const isPreview = index===0 && !(state.property===0 && state.company?.type!=="Кофейня")
+  const ownCafe = state.property===index && state.company?.type==="Кофейня";
+  const preview = index===0 && state.property!==0
     && !(state.company?.type==="Кофейня" && state.property!==null);
-  if (!isOwnCafe && !isPreview) return "";
-  const working = isOwnCafe && state.staff>0;
-  return '<span class="cafe-room'+(working || isPreview?' staffed':'')+'" aria-hidden="true">'
-    +'<span class="cafe-counter"><i></i><i></i></span><span class="cafe-table first"></span><span class="cafe-table second"></span>'
+  if (!ownCafe && !preview) return "";
+  const staffed = preview || state.staff>0;
+  return '<span class="cafe-room'+(staffed?' staffed':'')+'" aria-hidden="true">'
+    +'<span class="cafe-window"></span><span class="cafe-bench"></span><span class="cafe-entry"></span>'
+    +'<span class="cafe-counter"><i class="espresso-machine"></i><i class="grinder"></i><i class="cups"></i><i class="register"></i></span>'
+    +'<span class="cafe-table first"></span><span class="cafe-table second"></span><span class="cafe-table third"></span>'
     +'<i class="person barista"></i><i class="person waiter"></i><i class="person guest"></i></span>';
 }
 function streetLife() {
@@ -100,22 +100,38 @@ function streetLife() {
     +'<i class="person walker three"></i><i class="person walker four"></i></div>';
 }
 function map() {
-  const lot = cityLots[selected];
   const [name,rent,demand] = properties[selected];
   const occupied = state.property===selected;
+  const propertyTitle = occupied ? escape(state.company.title) : "Свободное помещение";
   const cafe = occupied && state.company?.type==="Кофейня";
   const detail = cafe ? (state.staff ? '<p>Бариста готовит кофе за стойкой, официант обслуживает столики.</p>' : '<p>Вы за стойкой. Наймите сотрудника, чтобы открыть обслуживание столиков.</p>'+action("openTeam","Перейти к команде")) : "";
   const terrain = cityBlocks.map(([x,y,w,h],index) => '<div aria-hidden="true" class="city-block block-'+index+'" style="left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px"><i></i><i></i><i></i></div>').join("");
-  const buildings = cityLots.map(([x,y,title],index)=>'<button type="button" class="lot'+(state.property===index?' leased':'')+'" data-action="selectLot" value="'+index+'" aria-pressed="'+(selected===index)+'" style="left:'+x+'px;top:'+y+'px">'+(cafeRoom(index)||'<span aria-hidden="true" class="roof"></span>')+'<span>'+properties[index][0]+'</span><span class="sr-only">: '+title+'</span></button>').join("");
+  const buildings = cityLots.map(([x,y],index)=>{
+    const leased = state.property===index;
+    const title = leased ? escape(state.company.title) : "Свободное помещение";
+    const interior = cafeRoom(index);
+    const sign = leased ? '<span class="lot-sign">'+title+'</span>' : "";
+    return '<button type="button" class="lot'+(leased?' leased':'')+'" data-action="selectLot" value="'+index
+      +'" aria-label="'+title+', '+properties[index][0]+'" aria-pressed="'+(selected===index)
+      +'" style="left:'+x+'px;top:'+y+'px">'+(interior||'<span aria-hidden="true" class="roof"></span>')+sign+'</button>';
+  }).join("");
   return '<div class="map-toolbar"><p>Проведите пальцем или потяните мышью, чтобы осмотреть город. Нажмите на здание, чтобы узнать условия аренды. Кофейня показана без крыши.</p><div class="row">'+action("zoomOut","− Отдалить")+action("zoomIn","+ Приблизить")+action("centerLot","К выбранному зданию")+'</div></div>'
-    +'<div class="city-viewport" id="city-scroll" tabindex="0" aria-label="Прокручиваемая карта Москвы"><div class="city-size" style="width:'+720*zoom+'px;height:'+500*zoom+'px"><div class="city" style="transform:scale('+zoom+')">'+terrain+'<div class="city-road horizontal" aria-hidden="true">САДОВОЕ КОЛЬЦО</div><div class="city-road road-west" aria-hidden="true"></div><div class="city-road road-east" aria-hidden="true"></div>'+streetLife()+buildings+'</div></div></div>'
-    +'<div class="lot-details" id="lot-details">'+block(lot[2],'<p>'+name+' · '+money(rent)+' в день · спрос '+Math.round(demand*100)+'%</p>'+detail+(!state.company?action("openCompany","Открыть компанию"):occupied?action("cancelLease","Отказаться от аренды"):action("lease",state.property===null?"Арендовать помещение":"Перенести компанию сюда",selected)))+'</div>';
+    +'<div class="city-viewport" id="city-scroll" tabindex="0" aria-label="Прокручиваемая карта Москвы"><div class="city-size" style="width:'+cityWidth*zoom+'px;height:'+cityHeight*zoom+'px"><div class="city" style="transform:scale('+zoom+')">'+terrain+'<div class="city-road horizontal" aria-hidden="true">САДОВОЕ КОЛЬЦО</div><div class="city-road road-west" aria-hidden="true"></div><div class="city-road road-east" aria-hidden="true"></div>'+streetLife()+buildings+'</div></div></div>'
+    +'<div class="lot-details" id="lot-details">'+block(propertyTitle,'<p>'+name+' · '+money(rent)+' в день · спрос '+Math.round(demand*100)+'%</p>'+detail+(!state.company?action("openCompany","Открыть компанию"):occupied?action("cancelLease","Отказаться от аренды"):action("lease",state.property===null?"Арендовать помещение":"Перенести компанию сюда",selected)))+'</div>';
 }
 function positionMap() {
   const viewport = byId("city-scroll");
   if (!viewport) return;
   viewport.scrollLeft = camera.left;
   viewport.scrollTop = camera.top;
+}
+function centerMap(viewport) {
+  const lot = viewport.querySelector('[data-action="selectLot"][aria-pressed="true"]');
+  if (!lot) return;
+  camera = {
+    left:(lot.offsetLeft+lot.offsetWidth/2)*zoom-viewport.clientWidth/2,
+    top:(lot.offsetTop+lot.offsetHeight/2)*zoom-viewport.clientHeight/2
+  };
 }
 function mapAction(button) {
   const viewport = byId("city-scroll");
@@ -130,8 +146,7 @@ function mapAction(button) {
     camera.top = (camera.top+viewport.clientHeight/2)*zoom/prior-viewport.clientHeight/2;
   }
   if (command==="centerLot") {
-    const [x,y] = cityLots[selected];
-    camera = {left:(x+50)*zoom-viewport.clientWidth/2,top:(y+40)*zoom-viewport.clientHeight/2};
+    centerMap(viewport);
   }
   render();
   const selector = command==="selectLot"?'[data-action="selectLot"][aria-pressed="true"]':'[data-action="'+command+'"]';
@@ -261,3 +276,8 @@ for (const type of ["lostpointercapture","pointercancel"]) view.addEventListener
   drag = undefined;
 });
 render();
+const initialMap = byId("city-scroll");
+if (initialMap) {
+  centerMap(initialMap);
+  positionMap();
+}
